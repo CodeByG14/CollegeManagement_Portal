@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CollegeManagement API</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0f1117; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; padding: 48px 24px; }
+  h1 { font-size: 1.8rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 40px; }
+  .section { margin-bottom: 32px; }
+  .section-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 12px; }
+
+  /* ✅ FIX: card needs display:flex + flex-direction handling */
+  .card {
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+  }
+  .card-header {
+    display: flex;        /* ✅ flex lives here now */
+    align-items: center;
+    gap: 14px;
+  }
+  .card:hover { border-color: #4f6ef7; }
+  .badge { font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.05em; flex-shrink: 0; }
+  .get { background: #0d3b2e; color: #34d399; }
+  .post { background: #2d1f0e; color: #fb923c; cursor: pointer; }
+  .info { flex: 1; }
+  .endpoint { font-size: 0.85rem; font-weight: 600; color: #c7d2fe; font-family: monospace; }
+  .desc { font-size: 0.78rem; color: #64748b; margin-top: 3px; }
+  a.card { text-decoration: none; display: block; } /* ✅ block so it wraps card-header */
+  .post-card { cursor: pointer; }
+
+  /* POST form */
+  .post-form { margin-top: 14px; border-top: 1px solid #2d3148; padding-top: 14px; display: none; flex-direction: column; gap: 10px; }
+  .post-form.open { display: flex; }
+  .form-row { display: flex; flex-direction: column; gap: 4px; }
+  .form-row label { font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+  .form-row input[type="text"],
+  .form-row input[type="email"] { background: #0f1117; border: 1px solid #2d3148; border-radius: 6px; padding: 7px 10px; color: #e2e8f0; font-size: 0.85rem; outline: none; }
+  .form-row input:focus { border-color: #fb923c; }
+  .form-row.checkbox-row { flex-direction: row; align-items: center; gap: 8px; }
+  .form-row.checkbox-row label { text-transform: none; font-size: 0.82rem; color: #94a3b8; }
+  .send-btn { align-self: flex-start; background: #fb923c; color: #0f1117; border: none; border-radius: 6px; padding: 7px 18px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+  .send-btn:hover { background: #f97316; }
+
+  /* Response box */
+  .response-box { margin-top: 12px; border-radius: 8px; padding: 12px 14px; font-size: 0.82rem; font-family: monospace; white-space: pre-wrap; word-break: break-all; display: none; }
+  .response-box.success { background: #0d2b1e; border: 1px solid #22c55e; color: #4ade80; display: block; }
+  .response-box.error   { background: #2b0d0d; border: 1px solid #ef4444; color: #f87171; display: block; }
+  .response-box.info    { background: #1a1f35; border: 1px solid #4f6ef7; color: #a5b4fc; display: block; }
+</style>
+</head>
+<body>
+<h1>CollegeManagement API</h1>
+<p class="subtitle">Click any GET endpoint to test it &bull; Click POST to expand the form</p>
+
+<div class="section">
+  <div class="section-title">Courses</div>
+  <a class="card" href="/courses/" target="_blank">
+    <div class="card-header">
+      <span class="badge get">GET</span>
+      <div class="info">
+        <div class="endpoint">/courses/</div>
+        <div class="desc">List all courses with departments</div>
+      </div>
+    </div>
+  </a>
+  <a class="card" href="/courses/1/faculty/" target="_blank">
+    <div class="card-header">
+      <span class="badge get">GET</span>
+      <div class="info">
+        <div class="endpoint">/courses/{course_id}/faculty/</div>
+        <div class="desc">Get faculty members for a course &mdash; example uses course id 1</div>
+      </div>
+    </div>
+  </a>
+  <a class="card" href="/courses/1/hostel/" target="_blank">
+    <div class="card-header">
+      <span class="badge get">GET</span>
+      <div class="info">
+        <div class="endpoint">/courses/{course_id}/hostel/</div>
+        <div class="desc">Get hostel facilities for a course &mdash; example uses course id 1</div>
+      </div>
+    </div>
+  </a>
+</div>
+
+<div class="section">
+  <div class="section-title">Transport</div>
+  <a class="card" href="/routes/1/buses/" target="_blank">
+    <div class="card-header">
+      <span class="badge get">GET</span>
+      <div class="info">
+        <div class="endpoint">/routes/{route_id}/buses/</div>
+        <div class="desc">Get buses on a route with seat availability &mdash; example uses route id 1</div>
+      </div>
+    </div>
+  </a>
+</div>
+
+<div class="section">
+  <div class="section-title">Registrations</div>
+  <div class="card post-card" id="reg-card" onclick="toggleForm()">
+    <div class="card-header">
+      <span class="badge post">POST</span>
+      <div class="info">
+        <div class="endpoint">/registrations/</div>
+        <div class="desc">Register a student for a course &mdash; click to expand</div>
+      </div>
+    </div>
+
+    <form class="post-form" id="reg-form" onclick="event.stopPropagation()">
+      <div class="form-row">
+        <label>student_name</label>
+        <input type="text" name="student_name" placeholder="John Doe">
+      </div>
+      <div class="form-row">
+        <label>email</label>
+        <input type="email" name="email" placeholder="john@example.com">
+      </div>
+      <div class="form-row">
+        <label>phone</label>
+        <input type="text" name="phone" placeholder="1234567890">
+      </div>
+      <div class="form-row">
+        <label>course (id)</label>
+        <input type="text" name="course" placeholder="1">
+      </div>
+      <div class="form-row checkbox-row">
+        <input type="checkbox" name="consent" id="consent-check">
+        <label for="consent-check">consent</label>
+      </div>
+      <button type="button" class="send-btn" onclick="submitRegistration()">Send</button>
+    </form>
+
+    <div class="response-box" id="reg-response"></div>
+  </div>
+</div>
+
+<script>
+  function toggleForm() {
+    const form = document.getElementById('reg-form');
+    form.classList.toggle('open');
+    document.getElementById('reg-response').className = 'response-box';
+  }
+
+  async function submitRegistration() {
+    const form = document.getElementById('reg-form');
+    const respBox = document.getElementById('reg-response');
+    const data = {
+      student_name: form.student_name.value.trim(),
+      email: form.email.value.trim(),
+      phone: form.phone.value.trim(),
+      course: parseInt(form.course.value.trim(), 10),
+      consent: form['consent-check'].checked,
+    };
+
+    respBox.className = 'response-box info';
+    respBox.textContent = 'Sending…';
+
+    try {
+      const res = await fetch('/registrations/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      respBox.className = res.ok ? 'response-box success' : 'response-box error';
+      respBox.textContent = JSON.stringify(json, null, 2);
+    } catch (err) {
+      respBox.className = 'response-box error';
+      respBox.textContent = 'Network error: ' + err.message;
+    }
+  }
+
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+</script>
+</body>
+</html>
